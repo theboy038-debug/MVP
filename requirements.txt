@@ -1,0 +1,38 @@
+# Direct dependencies only. Versions use minimum-compatible lower bounds
+# with a major-version upper bound to avoid breaking changes; no exact
+# pins (per Batch 0 Version Policy — see Batch 0 execution record).
+
+streamlit>=1.35,<2.0
+requests>=2.31,<3.0
+gspread>=6.0,<7.0
+google-auth>=2.29,<3.0
+
+# google-genai: lower bound raised from the original >=0.1 to >=2.0.
+# Versions below 2.x use a different internal HTTP transport
+# (requests) than the version this codebase was built and tested
+# against (2.18.1, which uses httpx). services/ai_provider/gemini_provider.py
+# imports httpx directly to classify network/timeout exceptions
+# (see that file's module docstring) — that fix only works correctly
+# against the httpx-based transport, confirmed present starting in
+# the 2.x line. The public API surface (Client, generate_content,
+# GenerateContentConfig fields, errors.ClientError/ServerError) is
+# unchanged between 0.8.0 and 2.18.1 — this bump only corrects the
+# transport-dependent assumption, not a business-logic decision.
+google-genai>=2.0,<3.0
+
+# httpx: was previously an undeclared transitive dependency of
+# google-genai. Declared explicitly here because
+# services/ai_provider/gemini_provider.py imports it directly
+# (for httpx.TimeoutException / httpx.TransportError exception
+# classification) — per this project's existing convention of
+# declaring direct-use dependencies explicitly even when a parent
+# package would also pull them in (see google-auth's entry above,
+# and 08_IMPLEMENTATION_SPEC.md's Configuration Ownership principle).
+httpx>=0.27,<1.0
+
+# python-dotenv: loads key=value pairs from a local .env file into
+# os.environ at startup. config.py remains the ONLY module that
+# reads os.environ (ADR-001) — this just changes where those
+# environment values can originate from (shell export, OR a .env
+# file), it does not add a second place that reads secrets.
+python-dotenv>=1.0,<2.0
